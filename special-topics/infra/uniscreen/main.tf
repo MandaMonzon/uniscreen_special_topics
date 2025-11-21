@@ -212,12 +212,11 @@ resource "aws_api_gateway_rest_api" "uniscreen_api" {
 }
 
 resource "aws_api_gateway_authorizer" "cognito_authorizer" {
-  name                           = "uniscreen_cognito_authorizer"
-  rest_api_id                    = aws_api_gateway_rest_api.uniscreen_api.id
-  identity_source                = "method.request.header.Authorization"
-  identity_validation_expression = "^Bearer [^ ]+"
-  type                           = "COGNITO_USER_POOLS"
-  provider_arns                  = [aws_cognito_user_pool.uniscreen.arn]
+  name            = "uniscreen_cognito_authorizer"
+  rest_api_id     = aws_api_gateway_rest_api.uniscreen_api.id
+  identity_source = "method.request.header.Authorization"
+  type            = "COGNITO_USER_POOLS"
+  provider_arns   = [aws_cognito_user_pool.uniscreen.arn]
 }
 
 /////////////////////
@@ -278,7 +277,7 @@ module "movies_lambda" {
   layers               = [aws_lambda_layer_version.pg8000.arn]
   timeout              = 20
 
-  vpc_config = local.vpc_config
+  vpc_config = null
 
   environment_variables = {
     PROJECT_NAME    = var.project
@@ -460,7 +459,7 @@ module "admin_seed_public_api" {
   enable_cors = true
 }
 
-# Protected: /movies (GET)
+# Protected: /movies (GET, POST)
 module "movies_protected_api" {
   source       = "../consumer/modules/apigateway/dynamic_apigateway"
   rest_api_id  = aws_api_gateway_rest_api.uniscreen_api.id
@@ -537,6 +536,10 @@ module "admin_seed_api" {
 resource "aws_api_gateway_deployment" "uniscreen_deployment" {
   rest_api_id = aws_api_gateway_rest_api.uniscreen_api.id
   description = "Deployment for UniScreen API"
+
+  lifecycle {
+    create_before_destroy = true
+  }
 
   depends_on = [
     module.signup_public_api,
