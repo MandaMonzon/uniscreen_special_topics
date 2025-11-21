@@ -47,27 +47,46 @@ def discover_migrations() -> List[str]:
 def run_sql_file(cur, path: str):
     with open(path, "r", encoding="utf-8") as f:
         sql = f.read()
-    # Some SQL files may contain multiple statements; pg8000 cursor can execute them
-    # but we split on ';' cautiously to avoid breaking functions. Simpler: use execute directly if single-statement,
-    # otherwise rely on db allowing multiple statements per execute. For Postgres via pg8000, execute expects a single statement,
-    # so we iterate by ';' tokens in a safe way.
-    statements = []
-    buff = []
-    for line in sql.splitlines():
-        buff.append(line)
-        if line.strip().endswith(";"):
-            statements.append("\n".join(buff).strip())
+
+    # Build statements while ignoring SQL comments.
+    statements: List[str] = []
+    buff: List[str] = []
+    in_block_comment = False
+
+    for raw_line in sql.splitlines():
+        line = raw_line.strip()
+
+        # Handle block comments /* ... */
+        if in_block_comment:
+            if "*/" in line:
+                in_block_comment = False
+            continue
+        if line.startswith("/*"):
+            if "*/" not in line:
+                in_block_comment = True
+            continue
+
+        # Skip single-line comments and empty lines
+        if line.startswith("--") or line == "":
+            continue
+
+        # Keep original line (preserve formatting) for execution
+        buff.append(raw_line)
+
+        # Statement terminator
+        if line.endswith(";"):
+            st = "\n".join(buff).strip()
+            if st:
+                statements.append(st)
             buff = []
-    # Append remainder without ';' (e.g., last statement might not end with ;)
+
+    # Append any trailing statement without semicolon
     if buff:
-        remainder = "\n".join(buff).strip()
-        if remainder:
-            statements.append(remainder)
+        st = "\n".join(buff).strip()
+        if st:
+            statements.append(st)
 
     for st in statements:
-        # skip pure comments
-        if not st or st.startswith("--"):
-            continue
         cur.execute(st)
 
 

@@ -1,0 +1,1 @@
+{"statusCode": 200, "headers": {"Content-Type": "application/json"}, "body": "{\"message\": \"Migrations applied successfully\", \"applied\": [\"001_create_movies.sql\", \"002_create_users.sql\", \"003_create_favorites.sql\"]}", "isBase64Encoded": false}

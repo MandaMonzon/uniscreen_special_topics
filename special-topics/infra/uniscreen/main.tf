@@ -142,6 +142,15 @@ resource "aws_iam_role_policy" "uniscreen_lambda_inline" {
           "secretsmanager:DescribeSecret"
         ],
         Resource = var.omdb_api_key_secret_arn != "" ? var.omdb_api_key_secret_arn : "*"
+      },
+      {
+        Sid    = "RdsSecretsManagerRead",
+        Effect = "Allow",
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ],
+        Resource = var.rds_secret_id != "" ? var.rds_secret_id : "*"
       }
     ]
   })
