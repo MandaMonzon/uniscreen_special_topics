@@ -90,6 +90,11 @@ def run_sql_file(cur, path: str):
         cur.execute(st)
 
 
+def list_movies(cur):
+    cur.execute("SELECT id, title, year, director FROM public.movies ORDER BY id")
+    rows = cur.fetchall()
+    return [{"id": r[0], "title": r[1], "year": r[2], "director": r[3]} for r in rows]
+
 def lambda_handler(event, context):
     try:
         region = os.environ.get("REGION")
@@ -100,6 +105,38 @@ def lambda_handler(event, context):
 
         if not all([region, db_endpoint, db_name, rds_secret_arn]):
             return response(500, {"error": "Missing required environment variables (REGION/DB_ENDPOINT/DB_NAME/RDS_SECRET_ID)"})
+
+        # Optional action handler to run ad-hoc SELECTs
+        method = event.get("httpMethod", "POST")
+        data = {}
+        if method == "POST":
+            body = event.get("body")
+            if isinstance(body, str):
+                try:
+                    data = json.loads(body or "{}")
+                except Exception:
+                    data = {}
+            else:
+                data = body or {}
+        # Accept action from body, query params, or top-level event for direct lambda invoke
+        action = (
+            data.get("action")
+            or (event.get("queryStringParameters") or {}).get("action")
+            or event.get("action")
+            or ""
+        ).lower()
+
+        if action == "list_movies":
+            # Run SELECT id,title,year,director FROM public.movies
+            user_tmp, password_tmp = get_db_credentials(rds_secret_arn, region)
+            if not user_tmp or not password_tmp:
+                return response(500, {"error": "Unable to resolve DB credentials from Secrets Manager"})
+            with connect_db(user_tmp, password_tmp, db_endpoint, db_port, db_name) as conn:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT id, title, year, director FROM public.movies ORDER BY id")
+                    rows = cur.fetchall()
+            movies = [{"id": r[0], "title": r[1], "year": r[2], "director": r[3]} for r in rows]
+            return response(200, {"movies": movies})
 
         user, password = get_db_credentials(rds_secret_arn, region)
         if not user or not password:

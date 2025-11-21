@@ -1,0 +1,1 @@
+{"statusCode": 200, "headers": {"Content-Type": "application/json"}, "body": "{\"movies\": [{\"id\": 1, \"title\": \"The Matrix\", \"year\": 1999, \"director\": \"Lana Wachowski, Lilly Wachowski\"}]}", "isBase64Encoded": false}
