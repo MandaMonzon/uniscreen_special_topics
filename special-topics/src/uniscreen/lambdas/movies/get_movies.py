@@ -101,13 +101,23 @@ def upsert_movie(conn, title: str, year: Optional[int], director: Optional[str],
   Retorna o registro (id, title, year, director, actors, plot, poster_url).
   """
   with conn.cursor() as cur:
-    cur.execute(
-      """
-      SELECT id FROM public.movies
-      WHERE title = %s AND ((year IS NULL AND %s IS NULL) OR year = %s)
-      """,
-      (title, year, year),
-    )
+    # Evitar parâmetro None sem tipo (erro 42P18) em consultas
+    if year is None:
+      cur.execute(
+        """
+        SELECT id FROM public.movies
+        WHERE title = %s AND year IS NULL
+        """,
+        (title,),
+      )
+    else:
+      cur.execute(
+        """
+        SELECT id FROM public.movies
+        WHERE title = %s AND year = %s
+        """,
+        (title, year),
+      )
     row = cur.fetchone()
 
     if row:
@@ -123,14 +133,24 @@ def upsert_movie(conn, title: str, year: Optional[int], director: Optional[str],
       )
       res = cur.fetchone()
     else:
-      cur.execute(
-        """
-        INSERT INTO public.movies (title, year, director, actors, plot, poster_url)
-        VALUES (%s, %s, %s, %s, %s, %s)
-        RETURNING id, title, year, director, actors, plot, poster_url
-        """,
-        (title, year, director, actors, plot, poster_url),
-      )
+      if year is None:
+        cur.execute(
+          """
+          INSERT INTO public.movies (title, year, director, actors, plot, poster_url)
+          VALUES (%s, NULL::integer, %s, %s, %s, %s)
+          RETURNING id, title, year, director, actors, plot, poster_url
+          """,
+          (title, director, actors, plot, poster_url),
+        )
+      else:
+        cur.execute(
+          """
+          INSERT INTO public.movies (title, year, director, actors, plot, poster_url)
+          VALUES (%s, %s, %s, %s, %s, %s)
+          RETURNING id, title, year, director, actors, plot, poster_url
+          """,
+          (title, year, director, actors, plot, poster_url),
+        )
       res = cur.fetchone()
 
   return {
@@ -142,6 +162,18 @@ def upsert_movie(conn, title: str, year: Optional[int], director: Optional[str],
     "plot": res[5],
     "poster_url": res[6],
   }
+
+def list_movies(conn) -> list[dict]:
+  with conn.cursor() as cur:
+    cur.execute(
+      """
+      SELECT id, title, year, director
+      FROM public.movies
+      ORDER BY id
+      """
+    )
+    rows = cur.fetchall()
+  return [{"id": r[0], "title": r[1], "year": r[2], "director": r[3]} for r in rows]
 
 
 def get_title_from_event(event) -> Optional[str]:
@@ -174,6 +206,20 @@ def get_omdb_api_key_from_secret(region: str, omdb_secret_arn: str) -> str:
 def lambda_handler(event, context):
   try:
     title = get_title_from_event(event)
+    method = event.get("httpMethod", "GET")
+    if method == "GET" and not title:
+      # Listar filmes diretamente do RDS
+      host, user, password, port, database = get_rds_credentials()
+      conn = pg8000.connect(user=user, password=password, host=host, port=port, database=database, ssl_context=True)
+      try:
+        movies = list_movies(conn)
+      finally:
+        try:
+          conn.close()
+        except Exception:
+          pass
+      return response(200, {"movies": movies})
+
     if not title:
       return response(400, {"error": "Missing 'title' (POST JSON body or query parameter)"})
 
@@ -212,7 +258,16 @@ def lambda_handler(event, context):
     title_out = omdb.get("Title") or title
     year_out = parse_year(omdb.get("Year"))
     director = omdb.get("Director") if omdb.get("Director") != "N/A" else None
-    actors = omdb.get("Actors") if omdb.get("Actors") != "N/A" else None
+
+    # Normalização de "actors": garantir string (separada por vírgulas) ou None
+    actors_raw = omdb.get("Actors")
+    if isinstance(actors_raw, list):
+      actors = ", ".join([str(a) for a in actors_raw if a and a != "N/A"]).strip() or None
+    elif isinstance(actors_raw, str):
+      actors = None if actors_raw.strip() == "" or actors_raw == "N/A" else actors_raw
+    else:
+      actors = None
+
     plot = omdb.get("Plot") if omdb.get("Plot") != "N/A" else None
     poster_final = uploaded_poster_url or (poster_url_src if poster_url_src != "N/A" else None)
 
