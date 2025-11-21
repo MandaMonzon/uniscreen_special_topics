@@ -1,0 +1,5 @@
+*.pyc
+__pycache__/
+*.zip
+.vscode/
+lambda_layer_rds/pg8000_layer.zip
