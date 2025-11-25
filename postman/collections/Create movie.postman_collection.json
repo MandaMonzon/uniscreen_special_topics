@@ -1,0 +1,103 @@
+{
+  "info": {
+    "_postman_id": "0fc909cc-6ab4-4ea9-a676-fbc0a208edc7",
+    "name": "Create movie",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "{{baseURL1}}/dev/movies",
+      "id": "83c32dd1-6dda-43d4-abbf-0ace4d7d2ff9",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "uuid": "7bec3908-b056-4efe-92e0-10e9750a7967"
+          },
+          {
+            "key": "User-Agent",
+            "value": "insomnia/12.1.0",
+            "uuid": "e4dc55dc-4634-46c8-b5e8-19bcf1683121"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer eyJraWQiOiJXT1J4bEJJOXhjV0tCWUlUUld2SlNKN1liOHh2QUwyd3BPMHhPSzVzcTJFPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiIzMWViOTViMC1hMGUxLTcwMDEtMWUyMC00NjRhMGJjNmRkNTYiLCJjb2duaXRvOmdyb3VwcyI6WyJhZG1pbiJdLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiaXNzIjoiaHR0cHM6XC9cL2NvZ25pdG8taWRwLnVzLWVhc3QtMi5hbWF6b25hd3MuY29tXC91cy1lYXN0LTJfbW5lZjBVZFBHIiwiY29nbml0bzp1c2VybmFtZSI6IjMxZWI5NWIwLWEwZTEtNzAwMS0xZTIwLTQ2NGEwYmM2ZGQ1NiIsIm9yaWdpbl9qdGkiOiJhMmIxZWU4My1iMDY2LTQ3MzgtOWM1Yi0yZDA5MzRmMTNkYWQiLCJhdWQiOiI1aGU3dGJrZDRoN3VhNXQzcm1mMGxmaTVjaSIsImV2ZW50X2lkIjoiOGUwNGMyNGYtMTNhNC00YzA4LWFlZGQtNjJmNGU0N2MxZmE2IiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE3NjQwMTk1MjcsImV4cCI6MTc2NDAyMzEyNywiaWF0IjoxNzY0MDE5NTI3LCJqdGkiOiI2NDZkZWQ5Ni0wNjNiLTQzYTUtYjk3ZS01OTU3ZDcwZDFhZDMiLCJlbWFpbCI6ImFtYW5kYS53Lm1vbnpvbkBnbWFpbC5jb20ifQ.E3E5zo0E2jc-5jJm47bddnXyREfoo2MI7G3lQ68igX9vPyyaBR39KHRZboRrSD1NtLSaavBmB3X4VrH1gZ0zJaNoz9TCvpphlc7-Q7TglrM5E4VE9M4ZzJc4O7CMm2VKV6rZFVLEjQsesvlqv_QNHrszlMilLXzNgm18yGZ64V2n0_tyBoRKgkTx7flX7R84sgCgIlZGj7LGw3Ft7n3rlFQhYIXb9k5Qx71un_VfaGaq0sVZG8SksNYABR_dDq6dkUN4p4-74u0IuHxjG4WnvpYEfJZFkSWyxB0pUknWxoj0Bwi3LetI3QybKSnfSKYywaUSFcuPZx9iW0cC5pKPlA",
+            "uuid": "1c5ad95b-772f-45be-8cb2-cc80a604a0fe"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"title\": \"Avatar\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseURL1}}/dev/movies",
+          "host": [
+            "{{baseURL1}}"
+          ],
+          "path": [
+            "dev",
+            "movies"
+          ]
+        }
+      }
+    },
+    {
+      "name": "{{baseURL1}}/dev/login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "id": "0723a887-e749-47cc-a846-4cbcae094e88",
+            "exec": [
+              "let json = pm.response.json();\r",
+              "pm.environment.set(\"token\", json.id_token || json.access_token || json.token);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "id": "8f75a4db-7085-46ed-8f07-a7586ea0092a",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "uuid": "87aea982-901c-43cf-b458-8882ee06559d"
+          },
+          {
+            "key": "User-Agent",
+            "value": "insomnia/12.1.0",
+            "uuid": "b54908a5-d8b3-4846-87a4-6fa81df10b5f"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"email\": \"amanda.w.monzon@gmail.com\",\r\n    \"password\": \"SenhaNova123!\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseURL1}}/dev/login",
+          "host": [
+            "{{baseURL1}}"
+          ],
+          "path": [
+            "dev",
+            "login"
+          ]
+        }
+      }
+    }
+  ]
+}
